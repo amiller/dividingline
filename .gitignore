@@ -1,0 +1,7 @@
+*~
+*.pyc
+dividingline/dividingline_cy.c
+dividingline/dividingline_cy.so
+dividingline/dividingline_cy.html
+build/
+dist/
