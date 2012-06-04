@@ -25,15 +25,22 @@ def animate():
 middle_offset = dividingline.middle_offset
 def optimize():
     size = im.shape[::-1]
-    def error(ab):
-        line = middle_offset(ab, size)
+    def error(x):
+        theta, dist = x
+        line = middle_offset(theta, dist, size)
         s =  1./(d.score(line, True) + 1e-5)
         clf()
         imshow(d.debug * d.image)
         pylab.waitforbuttonpress(0.01)
         return s
 
-    initial = 2*np.random.rand(2)
+    initial = (np.random.rand()*2*pi, (2*np.random.rand()-1)*100)
     r = scipy.optimize.fmin(error, initial)
     #r = scipy.optimize.fmin_bfgs(error, [1,-1])
-    return middle_offset(r)
+ 
+    line = middle_offset(r[0], r[1], size)
+    line = np.array(line) / line[2]
+    res = d.traverse(line)
+    if res['p1'] / res['p0'] < res['n1'] / res['n0']:
+        line *= -1
+    return line

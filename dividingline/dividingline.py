@@ -108,7 +108,7 @@ class DividingLine(object):
         u2 = float(r['n1']) / r['n0']
         v2 = float(r['n2']) / r['n0'] - u2**2
 
-        return (u1-u2)**2 / (v1 + v2 + 1e-5)
+        return (u1-u2) ** 2 / (v1 + v2 + 1e-5)
 
 
 def random_middle_line(size=(640,480)):
@@ -127,11 +127,11 @@ def synthetic_image(size, line=[1,1,-300]):
     return (b > 0).astype('u1') * 255
 
 
-def middle_offset(ab, size=(640,480)):
-    # Convenience function for optimizing a line near
-    # the center of the image
-    a,b = ab
-    c = -np.sqrt(np.dot(size,size))/2
+def middle_offset(theta, d, size=(640,480)):
+    a,b = -np.sin(theta), np.cos(theta)
+    x = a * d + size[0]/2
+    y = b * d + size[1]/2
+    c = -(x * a + y * b)
     return a,b,c
         
     
