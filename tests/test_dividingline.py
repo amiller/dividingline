@@ -1,6 +1,7 @@
 import unittest
 from dividingline import synthetic_image
 from dividingline import DividingLine
+import numpy as np
 
 
 class TestDividingLine(unittest.TestCase):

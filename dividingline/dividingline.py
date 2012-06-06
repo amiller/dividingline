@@ -14,16 +14,21 @@ class DividingLine(object):
         assert image.dtype in (np.uint8, np.float32)
         assert len(image.shape) == 2, "Greyscale only for now"
 
+        if weights is None: weights = np.ones_like(image)
+        assert weights.shape == image.shape
+
         def int_image(im):
             i = np.zeros((im.shape[0]+1, im.shape[1]+1), im.dtype)
             i[1:,1:] = im
             return np.cumsum(np.cumsum(i, 0), 1)
 
+        self.weights = weights
         self.image = image
 
         # Compute the integral image
-        self.m1 = int_image(image.astype('u4'))
-        self.m2 = int_image(image.astype('u8')**2)
+        self.m0 = int_image(weights.astype('u4'))
+        self.m1 = int_image((image*weights).astype('u4'))
+        self.m2 = int_image((image*weights).astype('u8')**2)
 
 
     def traverse_np(self, line, debug=False):
@@ -37,7 +42,7 @@ class DividingLine(object):
 
     def traverse(self, line, debug=False):
         self.debug = None if not debug else np.zeros_like(self.image).astype('f')
-        return traverse_moments(self.m1, self.m2, line, self.debug)
+        return traverse_moments(self.m0, self.m1, self.m2, line, self.debug)
 
     def _getrect_plain(self, im, ((l,t),(r,b))):
         # Same as _getrect, but without an integral image
@@ -50,7 +55,7 @@ class DividingLine(object):
     def _getmoments(self, rect, pn):
         # All three moments
         ((l,t),(r,b)) = rect
-        m0 = (r-l)*(b-t)
+        m0 = self._getrect(self.m0, rect)
         m1 = self._getrect(self.m1, rect)
         m2 = self._getrect(self.m2, rect)
 
@@ -119,7 +124,7 @@ def random_middle_line(size=(640,480)):
     return np.array([a,b,c], 'f')
 
 
-def synthetic_image(size, line=[1,1,-300]):
+def synthetic_image(size=(640,480), line=[1,1,-300]):
     x,y = np.meshgrid(range(size[0]), range(size[1]))
     w = np.ones_like(x)
 

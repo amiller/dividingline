@@ -1,8 +1,9 @@
 import dividingline; reload(dividingline)
 from dividingline import dividingline
 reload(dividingline)
-from dividingline import DividingLine, synthetic_image
+from dividingline import DividingLine, synthetic_image, random_middle_line
 import pylab
+import scipy.optimize
 
 line = [1,1,-300]
 #im = synthetic_image((640,480), line)
@@ -16,7 +17,11 @@ res2 = d2.traverse_np(line, True)
 
 def animate():
     while True:
-        d.traverse(dividingline.random_middle_line(), True)
+
+        line = random_middle_line()
+        d = DividingLine(synthetic_image(line=line))
+        d.traverse(line, True)
+        #d.traverse_np(line, True)
         pylab.clf()
         pylab.imshow(d.debug)
         pylab.waitforbuttonpress(0.01)
@@ -36,11 +41,14 @@ def optimize():
 
     initial = (np.random.rand()*2*pi, (2*np.random.rand()-1)*100)
     r = scipy.optimize.fmin(error, initial)
-    #r = scipy.optimize.fmin_bfgs(error, [1,-1])
- 
+
     line = middle_offset(r[0], r[1], size)
     line = np.array(line) / line[2]
     res = d.traverse(line)
+
+    # Scale the line so that a positive dot product indicates that a point is
+    # on the 'bright' side of the line
     if res['p1'] / res['p0'] < res['n1'] / res['n0']:
         line *= -1
+
     return line

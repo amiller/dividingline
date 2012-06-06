@@ -18,7 +18,8 @@ cdef struct Result:
     np.uint64_t n2
 
 
-cdef Result _traverse_moments(np.uint32_t *m1,
+cdef Result _traverse_moments(np.uint32_t *m0,
+                              np.uint32_t *m1,
                               np.uint64_t *m2,
                               int width, int height,
                               int l, int t, int r, int b,
@@ -48,7 +49,7 @@ cdef Result _traverse_moments(np.uint32_t *m1,
 
         if dbg is not None: dbg[t+1:b,l+1:r] = p0*2-1
 
-        r0 = (r-l)*(b-t)
+        r0 = m0[t*width+l] + m0[b*width+r] - m0[b*width+l] - m0[t*width+r]
         r1 = m1[t*width+l] + m1[b*width+r] - m1[b*width+l] - m1[t*width+r]
         r2 = m2[t*width+l] + m2[b*width+r] - m2[b*width+l] - m2[t*width+r]
 
@@ -63,10 +64,10 @@ cdef Result _traverse_moments(np.uint32_t *m1,
         x = (l+r)/2
         y = (t+b)/2
 
-        lt = _traverse_moments(m1, m2, width, height, l, t, x, y, A, B, C, dbg)
-        rt = _traverse_moments(m1, m2, width, height, x, t, r, y, A, B, C, dbg)
-        lb = _traverse_moments(m1, m2, width, height, x, y, r, b, A, B, C, dbg)
-        rb = _traverse_moments(m1, m2, width, height, l, y, x, b, A, B, C, dbg)
+        lt = _traverse_moments(m0, m1, m2, width, height, l, t, x, y, A, B, C, dbg)
+        rt = _traverse_moments(m0, m1, m2, width, height, x, t, r, y, A, B, C, dbg)
+        lb = _traverse_moments(m0, m1, m2, width, height, x, y, r, b, A, B, C, dbg)
+        rb = _traverse_moments(m0, m1, m2, width, height, l, y, x, b, A, B, C, dbg)
 
         result.p0 = lt.p0 + rt.p0 + lb.p0 + rb.p0
         result.p1 = lt.p1 + rt.p1 + lb.p1 + rb.p1
@@ -78,14 +79,18 @@ cdef Result _traverse_moments(np.uint32_t *m1,
         return result
 
 
-def traverse_moments(np.ndarray[np.uint32_t, ndim=2, mode='c'] m1,
+def traverse_moments(np.ndarray[np.uint32_t, ndim=2, mode='c'] m0,
+                     np.ndarray[np.uint32_t, ndim=2, mode='c'] m1,
                      np.ndarray[np.uint64_t, ndim=2, mode='c'] m2,
                      line, dbg=None):
 
-    height, width = m1.shape[0], m1.shape[1]
+    assert m0.shape[0] == m1.shape[0] == m2.shape[0]
+    assert m0.shape[1] == m1.shape[1] == m2.shape[1]
+    height, width = m0.shape[0], m0.shape[1]
     (A,B,C) = line
     
-    return _traverse_moments(<np.uint32_t *> m1.data,
+    return _traverse_moments(<np.uint32_t *> m0.data,
+                             <np.uint32_t *> m1.data,
                              <np.uint64_t *> m2.data,
                              width, height,
                              0, 0, width-1, height-1, A, B, C, dbg)
